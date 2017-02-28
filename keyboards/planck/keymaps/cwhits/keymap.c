@@ -32,8 +32,7 @@ enum planck_keycodes {
   LOWER,
   RAISE,
   BACKLIT,
-  EXT_PLV,
-  SLEEP
+  EXT_PLV
 };
 
 
@@ -42,6 +41,7 @@ enum planck_keycodes {
 #define FN_ENT SFT_T(KC_ENT) 
 #define FN_LEFT GUI_T(KC_LEFT)
 #define FN_DRP LGUI(LSFT(KC_5))
+#define SLEEP LCTL(LSFT(KC_PWR))
 #define FN MO(_FN)
 
 // Fillers to make layering more clear
@@ -81,16 +81,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+-------------+------+------+------+------+------|
  * | Del  |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |   _  |   =  |   {  |   }  |  |   |
  * |------+------+------+------+------+------|------+------+------+------+------+------|
- * |      |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |ISO ~ |ISO | |      |      |      |
+ * |      |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |ISO ~ |ISO | | Home | End  |      |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
  * |      |      |      |      |      |             |      | Play | Prev | Next | Mute |
  * `-----------------------------------------------------------------------------------'
  */
 [_LOWER] = {
-  {KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_BSPC},
-  {KC_DEL,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_UNDS, KC_EQL,  KC_LCBR, KC_RCBR, KC_PIPE},
-  {_______, KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,S(KC_NUHS),S(KC_NUBS),KC_HOME, KC_END, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______,  KC_MPLY, KC_MPRV, KC_MNXT, KC_MUTE}
+  {KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR,    KC_ASTR,    KC_LPRN, KC_RPRN, KC_BSPC},
+  {KC_DEL,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_UNDS,    KC_EQL,     KC_LCBR, KC_RCBR, KC_PIPE},
+  {_______, KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  S(KC_NUHS), S(KC_NUBS), KC_HOME, KC_END,  _______},
+  {_______, _______, _______, _______, _______, _______, _______, _______,    KC_MPLY,    KC_MPRV, KC_MNXT, KC_MUTE}
 },
 
 /* Raise
@@ -104,7 +104,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+-------------+------+------+------+------+------|
  * | Del  |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |   -  |   +  |   [  |   ]  |  \   |
  * |------+------+------+------+------+------|------+------+------+------+------+------|
- * |      |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |ISO # |ISO / |      |      |      |
+ * |      |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |ISO # |ISO / |Pg Up |Pg Dn |      |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
  * |      |      |      |      |      |             |      |DrpShr| Vol- | Vol+ | Mute |
  * `-----------------------------------------------------------------------------------'
@@ -265,23 +265,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           PLAY_NOTE_ARRAY(tone_plover_gb, false, 0);
         #endif
         layer_off(_PLOVER);
-      }
-      return false;
-      break;
-    // Lock screen on OSX
-    // For some reason, this has to be a macro, otherwise the keydown and keyup
-    // sequence is sometimes off and doesn't work
-    // Tried ACTION_MODS_KEY(MOD_LCTL | MOD_LSFT, KC_EJCT) // LCTL(LSFT(KC_EJCT))
-    // and it was inconsistent
-    case SLEEP:
-      if (record->event.pressed) {
-        return MACRO(
-          D(LSFT),
-          D(LCTL),
-          T(POWER),
-          U(LCTL),
-          U(LSFT),
-        END);
       }
       return false;
       break;
