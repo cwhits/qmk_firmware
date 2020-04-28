@@ -3,12 +3,12 @@
 
 #include "planck.h"
 #include "action_layer.h"
-#ifdef AUDIO_ENABLE
-  #include "audio.h"
-#endif
 #include "eeconfig.h"
+#include <process_unicode_common.h>
 
 extern keymap_config_t keymap_config;
+void register_hex32(uint32_t hex);
+uint16_t repeat_mode;
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
@@ -17,22 +17,22 @@ extern keymap_config_t keymap_config;
 
 enum planck_layers {
   _QWERTY,
-  _COLEMAK,
-  _DVORAK,
   _LOWER,
   _RAISE,
-  _PLOVER,
   _FN,
   _ADJUST
 };
 
 enum planck_keycodes {
   QWERTY = SAFE_RANGE,
-  PLOVER,
   LOWER,
   RAISE,
   BACKLIT,
-  EXT_PLV
+  EXT_PLV,
+  KC_NOMODE,
+  KC_WIDE,
+  KC_SCRIPT,
+  KC_BLOCKS
 };
 
 
@@ -117,24 +117,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   {_______, _______, _______, _______, _______, _______, _______, _______, FN_DRP,  KC_VOLD, KC_VOLU, KC_MUTE}
 },
 
-/* Plover layer (http://opensteno.org)
- * ,-----------------------------------------------------------------------------------.
- * |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |
- * |------+------+------+------+------+-------------+------+------+------+------+------|
- * |      |   S  |   T  |   P  |   H  |   *  |   *  |   F  |   P  |   L  |   T  |   D  |
- * |------+------+------+------+------+------|------+------+------+------+------+------|
- * |      |   S  |   K  |   W  |   R  |   *  |   *  |   R  |   B  |   G  |   S  |   Z  |
- * |------+------+------+------+------+------+------+------+------+------+------+------|
- * | Exit |      |      |   A  |   O  |      |      |   E  |   U  |      |      |      |
- * `-----------------------------------------------------------------------------------'
- */
-
-[_PLOVER] = {
-  {KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1,    KC_1   },
-  {XXXXXXX, KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC},
-  {XXXXXXX, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT},
-  {EXT_PLV, XXXXXXX, XXXXXXX, KC_C,    KC_V,    XXXXXXX, XXXXXXX, KC_N,    KC_M,    XXXXXXX, XXXXXXX, XXXXXXX}
-},
 
 /* Fn
  *  Hyper keys used for dropshare
@@ -164,7 +146,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,-----------------------------------------------------------------------------------.
  * |      | Reset|      |      |      |      |      |      |      |      |      |Sleep |
  * |------+------+------+------+------+-------------+------+------+------+------+------|
- * |      |      |      |Aud on|Audoff|AGnorm|AGswap|Qwerty|      |      |Plover|      |
+ * |      |      |      |Aud on|Audoff|AGnorm|AGswap|Qwerty|      |      | wide |      |
  * |------+------+------+------+------+------|------+------+------+------+------+------|
  * |      |Voice-|Voice+|Mus on|Musoff|MIDIon|MIDIof|      |      |      |      |      |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
@@ -172,137 +154,162 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * `-----------------------------------------------------------------------------------'
  */
 [_ADJUST] = {
-  {_______, RESET,   _______, _______, _______, _______, _______, _______, _______, _______, _______, SLEEP  },
-  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  _______, _______, PLOVER,  _______},
-  {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______, _______, _______, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______}
+  {_______, RESET,   _______, _______, _______, _______, _______, _______, _______, _______,   _______, SLEEP  },
+  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  _______, _______,   KC_WIDE, _______},
+  {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______, _______, KC_NOMODE, _______},
+  {_______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______, _______}
 }
 
 
 };
-
-#ifdef AUDIO_ENABLE
-
-float tone_startup[][2]    = SONG(STARTUP_SOUND);
-float tone_qwerty[][2]     = SONG(QWERTY_SOUND);
-float tone_dvorak[][2]     = SONG(DVORAK_SOUND);
-float tone_colemak[][2]    = SONG(COLEMAK_SOUND);
-float tone_plover[][2]     = SONG(PLOVER_SOUND);
-float tone_plover_gb[][2]  = SONG(PLOVER_GOODBYE_SOUND);
-float music_scale[][2]     = SONG(MUSIC_SCALE_SOUND);
-
-float tone_goodbye[][2] = SONG(GOODBYE_SOUND);
-#endif
-
 
 void persistant_default_layer_set(uint16_t default_layer) {
   eeconfig_update_default_layer(default_layer);
   default_layer_set(default_layer);
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  switch (keycode) {
-    case QWERTY:
-      if (record->event.pressed) {
-        #ifdef AUDIO_ENABLE
-          PLAY_NOTE_ARRAY(tone_qwerty, false, 0);
-        #endif
-        persistant_default_layer_set(1UL<<_QWERTY);
-      }
-      return false;
-      break;
-    case LOWER:
-      if (record->event.pressed) {
-        layer_on(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      } else {
-        layer_off(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      }
-      return false;
-      break;
-    case RAISE:
-      if (record->event.pressed) {
-        layer_on(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      } else {
-        layer_off(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      }
-      return false;
-      break;
-    case BACKLIT:
-      if (record->event.pressed) {
-        register_code(KC_RSFT);
-        #ifdef BACKLIGHT_ENABLE
-          backlight_step();
-        #endif
-      } else {
-        unregister_code(KC_RSFT);
-      }
-      return false;
-      break;
-    case PLOVER:
-      if (record->event.pressed) {
-        #ifdef AUDIO_ENABLE
-          stop_all_notes();
-          PLAY_NOTE_ARRAY(tone_plover, false, 0);
-        #endif
-        layer_off(_RAISE);
-        layer_off(_LOWER);
-        layer_off(_ADJUST);
-        layer_on(_PLOVER);
-        if (!eeconfig_is_enabled()) {
-            eeconfig_init();
-        }
-        keymap_config.raw = eeconfig_read_keymap();
-        keymap_config.nkro = 1;
-        eeconfig_update_keymap(keymap_config.raw);
-      }
-      return false;
-      break;
-    case EXT_PLV:
-      if (record->event.pressed) {
-        #ifdef AUDIO_ENABLE
-          PLAY_NOTE_ARRAY(tone_plover_gb, false, 0);
-        #endif
-        layer_off(_PLOVER);
-      }
-      return false;
-      break;
-  }
-  return true;
+void eeconfig_init_user(void) {
+    set_unicode_input_mode(UC_MAC);
 }
 
 void matrix_init_user(void) {
-    #ifdef AUDIO_ENABLE
-        startup_user();
-    #endif
+    repeat_mode = KC_NOMODE;
+};
+
+bool process_record_glyph_replacement(uint16_t keycode, keyrecord_t *record, uint32_t baseAlphaLower, uint32_t baseAlphaUpper, uint32_t zeroGlyph, uint32_t baseNumberOne, uint32_t spaceGlyph) {
+    uint8_t temp_mod = get_mods();
+    uint8_t temp_osm = get_oneshot_mods();
+    if ((((temp_mod | temp_osm) & (MOD_MASK_CTRL | MOD_MASK_ALT | MOD_MASK_GUI))) == 0) {
+        if (KC_A <= keycode && keycode <= KC_Z) {
+            if (record->event.pressed) {
+                clear_mods();
+                clear_oneshot_mods();
+
+                unicode_input_start();
+                uint32_t base = ((temp_mod | temp_osm) & MOD_MASK_SHIFT) ? baseAlphaUpper : baseAlphaLower;
+                register_hex32(base + (keycode - KC_A));
+                unicode_input_finish();
+
+                set_mods(temp_mod);
+            }
+            return false;
+        } else if (keycode == KC_0) {
+            if ((temp_mod | temp_osm) & MOD_MASK_SHIFT) {  // skip shifted numbers, so that we can still use symbols etc.
+                return process_record_kb(keycode, record);
+            }
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(zeroGlyph);
+                unicode_input_finish();
+            }
+            return false;
+        } else if (KC_1 <= keycode && keycode <= KC_9) {
+            if ((temp_mod | temp_osm) & MOD_MASK_SHIFT) {  // skip shifted numbers, so that we can still use symbols etc.
+                return process_record_kb(keycode, record);
+            }
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(baseNumberOne + (keycode - KC_1));
+                unicode_input_finish();
+            }
+            return false;
+        } else if (keycode == KC_SPACE) {
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(spaceGlyph);  // em space
+                unicode_input_finish();
+            }
+            return false;
+        }
+    }
+    return process_record_kb(keycode, record);
 }
 
-#ifdef AUDIO_ENABLE
-
-void startup_user()
-{
-    _delay_ms(20); // gets rid of tick
-    PLAY_NOTE_ARRAY(tone_startup, false, 0);
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case QWERTY:
+          if (record->event.pressed) {
+            persistant_default_layer_set(1UL<<_QWERTY);
+          }
+          return false;
+          break;
+        case LOWER:
+          if (record->event.pressed) {
+            layer_on(_LOWER);
+            update_tri_layer(_LOWER, _RAISE, _ADJUST);
+          } else {
+            layer_off(_LOWER);
+            update_tri_layer(_LOWER, _RAISE, _ADJUST);
+          }
+          return false;
+          break;
+        case RAISE:
+          if (record->event.pressed) {
+            layer_on(_RAISE);
+            update_tri_layer(_LOWER, _RAISE, _ADJUST);
+          } else {
+            layer_off(_RAISE);
+            update_tri_layer(_LOWER, _RAISE, _ADJUST);
+          }
+          return false;
+          break;
+        case BACKLIT:
+          if (record->event.pressed) {
+            register_code(KC_RSFT);
+            #ifdef BACKLIGHT_ENABLE
+              backlight_step();
+            #endif
+          } else {
+            unregister_code(KC_RSFT);
+          }
+          return false;
+          break;
+        case KC_NOMODE:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_NOMODE) {
+                    dprint("Disabling repeat mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
+        case KC_WIDE:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_WIDE) {
+                    dprint("Enabling wide mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
+        case KC_SCRIPT:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_SCRIPT) {
+                    dprint("Enabling calligraphy mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
+        case KC_BLOCKS:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_BLOCKS) {
+                    dprint("Enabling blocks mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
+    }
+    if (repeat_mode == KC_WIDE) {
+        if (((KC_A <= keycode) && (keycode <= KC_0)) || keycode == KC_SPACE) {
+            return process_record_glyph_replacement(keycode, record, 0xFF41, 0xFF21, 0xFF10, 0xFF11, 0x2003);
+        }
+    } else if (repeat_mode == KC_SCRIPT) {
+        if (((KC_A <= keycode) && (keycode <= KC_0)) || keycode == KC_SPACE) {
+            return process_record_glyph_replacement(keycode, record, 0x1D4EA, 0x1D4D0, 0x1D7CE, 0x1D7C1, 0x2002);
+        }
+    } else if (repeat_mode == KC_BLOCKS) {
+        if (((KC_A <= keycode) && (keycode <= KC_0)) || keycode == KC_SPACE) {
+            return process_record_glyph_replacement(keycode, record, 0x1F170, 0x1F170, '0', '1', 0x2002);
+        }
+    }
+    return true;
 }
 
-void shutdown_user()
-{
-    PLAY_NOTE_ARRAY(tone_goodbye, false, 0);
-    _delay_ms(150);
-    stop_all_notes();
-}
-
-void music_on_user(void)
-{
-    music_scale_user();
-}
-
-void music_scale_user(void)
-{
-    PLAY_NOTE_ARRAY(music_scale, false, 0);
-}
-
-#endif
