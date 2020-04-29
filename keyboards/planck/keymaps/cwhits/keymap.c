@@ -168,7 +168,7 @@ void persistant_default_layer_set(uint16_t default_layer) {
   default_layer_set(default_layer);
 }
 
-void eeconfig_init_user(void) {
+void keyboard_post_init_user(void) {
     set_unicode_input_mode(UC_MAC);
 }
 
