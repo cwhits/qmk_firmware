@@ -157,10 +157,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * `-----------------------------------------------------------------------------------'
  */
 [_ADJUST] = {
-  {_______, RESET,   _______, _______, _______, _______, _______, _______, KC_REACT, KC_SMOL,   _______, SLEEP  },
-  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  KC_BLOCKS, KC_SCRIPT,   KC_WIDE, _______},
-  {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______, _______, KC_NOMODE, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______, _______}
+  {_______, RESET,   _______, _______, _______, _______, _______, _______, KC_REACT,  KC_SMOL,   _______,   SLEEP  },
+  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  KC_BLOCKS, KC_SCRIPT, KC_WIDE,   _______},
+  {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______,   _______,   KC_NOMODE, _______},
+  {_______, _______, _______, _______, _______, _______, _______, _______, _______,   _______,   _______,   _______}
 }
 
 
@@ -380,4 +380,3 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     return true;
 }
-
