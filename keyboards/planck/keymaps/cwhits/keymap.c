@@ -8,6 +8,7 @@
 
 extern keymap_config_t keymap_config;
 void register_hex32(uint32_t hex);
+uint32_t characterArray[] = { 0x1D43,0x1D47,0x1D9C,0x1D48,0x1D49,0x1DA0,0x1D4D,0x02B0,0x1DA6,0x02B2,0x1D4F,0x02E1,0x1D50,0x207f,0x1D52,0x1D56,0x1D60,0x02B3,0x02E2,0x1D57,0x1D58,0x1D5B,0x02B7,0x02E3,0x02B8,0x1DBB };
 uint16_t repeat_mode;
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
@@ -32,7 +33,9 @@ enum planck_keycodes {
   KC_NOMODE,
   KC_WIDE,
   KC_SCRIPT,
-  KC_BLOCKS
+  KC_BLOCKS,
+  KC_REACT,
+  KC_SMOL
 };
 
 
@@ -154,8 +157,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * `-----------------------------------------------------------------------------------'
  */
 [_ADJUST] = {
-  {_______, RESET,   _______, _______, _______, _______, _______, _______, _______, _______,   _______, SLEEP  },
-  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  _______, _______,   KC_WIDE, _______},
+  {_______, RESET,   _______, _______, _______, _______, _______, _______, KC_REACT, KC_SMOL,   _______, SLEEP  },
+  {_______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  KC_BLOCKS, KC_SCRIPT,   KC_WIDE, _______},
   {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______, _______, KC_NOMODE, _______},
   {_______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______, _______}
 }
@@ -296,6 +299,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 repeat_mode = keycode;
             }
             return false;
+        case KC_REACT:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_REACT) {
+                    dprint("Enabling reactji mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
+        case KC_SMOL:
+            if (record->event.pressed) {
+                if (repeat_mode != KC_SMOL) {
+                    dprint("Enabling smalltext mode\n");
+                }
+                repeat_mode = keycode;
+            }
+            return false;
     }
     if (repeat_mode == KC_WIDE) {
         if (((KC_A <= keycode) && (keycode <= KC_0)) || keycode == KC_SPACE) {
@@ -306,8 +325,57 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return process_record_glyph_replacement(keycode, record, 0x1D4EA, 0x1D4D0, 0x1D7CE, 0x1D7C1, 0x2002);
         }
     } else if (repeat_mode == KC_BLOCKS) {
-        if (((KC_A <= keycode) && (keycode <= KC_0)) || keycode == KC_SPACE) {
-            return process_record_glyph_replacement(keycode, record, 0x1F170, 0x1F170, '0', '1', 0x2002);
+        if (((KC_A <= keycode) && (keycode <= KC_0))) {
+            if (record->event.pressed) {
+                SEND_STRING(":-");
+                tap_code(keycode);
+                SEND_STRING(":");
+            }
+            return false;
+        }
+        if (keycode == KC_SPACE) {
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(0x2003);
+                unicode_input_finish();
+            }
+            return false;
+        }
+    } else if (repeat_mode == KC_REACT) {
+        if (((KC_A <= keycode) && (keycode <= KC_0))) {
+            if (record->event.pressed) {
+                SEND_STRING("+:-");
+                tap_code(keycode);
+                SEND_STRING(":");
+                tap_code(KC_ENT);
+            }
+            return false;
+        }
+    } else if (repeat_mode == KC_SMOL) {
+        if ((KC_A <= keycode) && (keycode <= KC_Z)) {
+            uint32_t glyph = characterArray[keycode - KC_A];
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(glyph);
+                unicode_input_finish();
+            }
+            return false;
+        }
+        if (keycode == KC_EXLM) {
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(0x1D4E);
+                unicode_input_finish();
+            }
+            return false;
+        }
+        if (keycode == KC_SLSH) {
+            if (record->event.pressed) {
+                unicode_input_start();
+                register_hex32(0x2C0);
+                unicode_input_finish();
+            }
+            return false;
         }
     }
     return true;
